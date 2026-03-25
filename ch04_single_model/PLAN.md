@@ -2,26 +2,25 @@
 
 ## The Idea
 
-Ensemble costs N models per query. Standard RAG uses one model. Can we do attribution inside one model?
+Ch1-3 run the model N times (one prompt per source). Standard RAG uses one model, all sources in the prompt. Can we do attribution that way?
 
-**Pacing:** "leave-one-out works!" (false confidence) → "but how much COULD a source influence?" → 10^83 (rug pull) → LipschitzTensor (the fix).
+**Pacing:** leave-one-out works! (false confidence) → "but what COULD a source do?" → 10^83 (rug pull) → LipschitzTensor (the fix). Linear model is a 5-minute bridge, not a section.
 
 ## What the Student Builds
 
-### Part 1: Motivation (~5 min)
+### Part 1: "We're running 10 prompts. What about 1?" (~5 min)
 
-- N models × cost. "What if one model, all sources in the prompt?"
+- Cost of N prompts. "All sources in one prompt = standard RAG."
 
 ### Part 2: Leave-one-out works! (~20 lines)
 
 - All sources in one GPT-2 context. Blend each toward neutral, measure change.
-- Same colored bars. Seems fine!
-- "But this only shows what DID happen. What COULD a malicious source do?"
+- Same colored bars (inline HTML). Seems fine!
+- "But this only shows what DID happen. A malicious source could hide..."
 
-### Part 3: The crisis — linear model (~5 min, ~20 lines)
+### Part 3: The linear bridge (~5 min, ~20 lines)
 
-- Perceptron: sensitivity = ||W|| = 4.7. Manageable.
-- "A transformer has 12 layers. The bounds multiply..."
+- Perceptron: sensitivity = ||W|| = 4.7. Manageable. "Now imagine 12 layers..."
 
 ### Part 4: LipschitzTensor (~400 lines)
 
@@ -31,10 +30,10 @@ Ensemble costs N models per query. Standard RAG uses one model. Can we do attrib
 ### Part 5: GPT-2 → 10^83 (~150 lines)
 
 - `gpt2_lipschitz.py` — drop-in for picoGPT
-- Per-layer breakdown. See the multiplication.
-- Sidebar: tokenization boundaries and source boundaries (5-minute gotcha note)
+- Per-layer breakdown showing the multiplication
+- 5-minute sidebar: tokenization boundaries vs source boundaries
 
-### Part 6: See it
+### Part 6: Dashboard gains mode toggle
 
 ```python
 results["lip_bound"] = logits.lip
@@ -42,24 +41,22 @@ results["mode"] = "single-model"
 show(results, sources)
 ```
 
-Dashboard now shows a mode toggle (ensemble vs single-model) and a "max possible influence" indicator from the Lipschitz bound.
-
 ## The Artifact
 
-**Notebook:** `ch04.ipynb` — the longest chapter. Leave-one-out, linear bridge, LipschitzTensor, GPT-2.
-**Script:** `ch04.py --mode single-model` — CLI with both modes.
-**Viz:** dashboard gains mode toggle and Lipschitz bound display.
+**Notebook:** `ch04.ipynb` — the longest chapter.
+**Script:** `ch04.py --mode single-model`
+**Dashboard:** gains ensemble/single-model toggle + Lipschitz bound display.
 
 ## Key Ideas
 
-1. **Single model = cheaper but harder.**
-2. **Leave-one-out works for empirical attribution.**
-3. **Lipschitz bound = worst case.** Linear: 4.7. Transformer: 10^83.
-4. **The bound is loose but provable.** → Ch5 adds noise.
+1. **Single model = one prompt, all sources. Cheaper.**
+2. **Leave-one-out = empirical. Lipschitz = worst-case.**
+3. **Linear: 4.7. Transformer: 10^83.** Same math, depth explodes it.
+4. **Naturally motivated by Ch1:** "we were running 10 prompts. Now we run 1."
 
 ## Assets Inherited (from Ch3)
 
-- The app/dashboard, `rdp_accountant.py`, both datasets
+- Dashboard, `rdp_accountant.py`, both datasets
 
 ## Assets Produced (for Ch5)
 

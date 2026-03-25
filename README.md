@@ -10,43 +10,32 @@ This series picks up where Karpathy's [Zero to Hero](https://karpathy.ai/zero-to
 
 ---
 
-## Setup
-
-Each chapter is a **Jupyter notebook** (the lesson) + a **Python script** (the runnable artifact). Attribution results are rendered in the [viz dashboard](viz/) — a provided visualization tool you import but don't need to understand. Like matplotlib for attribution.
-
-```python
-# At the end of every chapter:
-from viz import show
-show(results, sources)
-# Opens the interactive dashboard at localhost:5001
-```
-
----
-
 ## Syllabus
 
 ### Part I: Ensemble Attribution
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 1 | [Ensemble Attribution](ch01_ensemble_attribution/) | N-gram votes → LLM ensemble → `show(results)` in the dashboard |
-| 2 | [Weighted Voting](ch02_weighted_voting/) | FTPL adaptive weights. Multi-document reasoning |
-| 3 | [Private Voting](ch03_private_voting/) | GNMax + RDP (autodp from scratch). Budget controls in the dashboard |
+| 1 | [Ensemble Attribution](ch01_ensemble_attribution/) | "You are the model" → n-gram votes → LLM ensemble (one model, N prompts). Inline colored text. |
+| 2 | [Weighted Voting](ch02_weighted_voting/) | FTPL adaptive weights. Multi-document reasoning. |
+| 3 | [Private Voting](ch03_private_voting/) | GNMax + RDP (autodp from scratch). **Dashboard arrives.** Budgets, spend meters. |
 
 ### Part II: Single-Model Attribution
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 4 | [The Single-Model Path](ch04_single_model/) | Linear SGD (5 min) → LipschitzTensor → GPT-2 (10^83). Mode toggle in dashboard |
-| 5 | [Single-Model Privacy](ch05_single_model_privacy/) | DP noise + per-individual accounting. Both modes fully private |
+| 4 | [The Single-Model Path](ch04_single_model/) | Leave-one-out → LipschitzTensor → GPT-2 (10^83). Mode toggle in dashboard. |
+| 5 | [Single-Model Privacy](ch05_single_model_privacy/) | DP noise + per-individual accounting. Both modes fully private. |
 
 ### Part III: Going Deeper, Going Faster
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 6 | [GPU Acceleration](ch06_gpu_acceleration/) | MLX. 40x speedup. Qwen3 0.6B at interactive speed |
-| 7 | [Training Attribution](ch07_training_attribution/) | PATE = Ch1's ensemble applied to training. Full circle |
-| 8 | [SOTA Models](ch08_sota_models/) | *(Coming soon)* DeepSeek-R1 + llama.cpp |
+| 6 | [GPU Acceleration](ch06_gpu_acceleration/) | MLX. 40x speedup. Qwen3 0.6B at interactive speed. |
+| 7 | [Training Attribution](ch07_training_attribution/) | PATE = Ch1's ensemble for training. Full circle. |
+| 8 | [SOTA Models](ch08_sota_models/) | *(Coming soon)* DeepSeek-R1 + llama.cpp. |
+
+Ch1-7 is the complete course. Ch8 is the bonus level.
 
 ---
 
@@ -54,21 +43,41 @@ show(results, sources)
 
 ```
 PART I — ENSEMBLE
-  Ch 1: ensemble voting → dashboard          "attribution = counting votes"
-  Ch 2: FTPL weighted voting                  "blend sources for complex questions"
-  Ch 3: GNMax + RDP → budgets in dashboard    "make the votes private"
+  Ch 1: "you are the model" → ensemble       15 min, zero dependencies
+  Ch 2: FTPL weighted voting                  multi-hop reasoning
+  Ch 3: GNMax + RDP → dashboard arrives       budgets + conflicting sources
 
-PART II — SINGLE MODEL (going cheaper)
-  Ch 4: Lipschitz bounds → 10^83             "bound influence inside one model"
-  Ch 5: DP for inference                      "noise + budgets, same accountant"
+PART II — SINGLE MODEL
+  Ch 4: leave-one-out → Lipschitz → 10^83    one model instead of N prompts
+  Ch 5: DP for inference                      noise + budgets, same accountant
 
-PART III — SCALE (hard/easy/hard pacing)
-  Ch 6: GPU acceleration (fun!)               "40x faster"
-  Ch 7: training attribution (deep)           "PATE — full circle to Ch1"
-  Ch 8: DeepSeek-R1 (bonus)                   "production pipeline"
+PART III — SCALE
+  Ch 6: GPU acceleration (fun!)               40x faster
+  Ch 7: training attribution (deep)           PATE — full circle to Ch1
+  Ch 8: DeepSeek-R1 (bonus)                   production pipeline
 ```
 
-Ch1-7 is the complete course. Ch8 is the bonus level.
+## Visualization
+
+Ch1-2 use **inline notebook rendering** — colored HTML spans, zero dependencies:
+
+```python
+from IPython.display import HTML
+html = ""
+for token, attr in zip(tokens, attributions):
+    color = COLORS[max(attr, key=attr.get)]
+    html += f'<span style="border-bottom:3px solid {color};padding:2px">{token}</span> '
+display(HTML(html))
+```
+
+Ch3+ introduces the **[viz dashboard](viz/)** — a provided interactive tool with budget controls, spend meters, and exhaustion markers. Import it, call `show()`:
+
+```python
+from viz import show
+show(results, sources)
+```
+
+Both interfaces are always available. Inline for simplicity, dashboard for interactivity.
 
 ## Three Datasets
 
@@ -78,7 +87,7 @@ Ch1-7 is the complete course. Ch8 is the bonus level.
 "I believe the best pet is a dog"
 "I believe the best pet is a hamster"
 ```
-Identical prefix, different completions. Shows vote counting in 5 minutes. Disposable.
+Identical prefix. Shows vote counting in 5 minutes. Disposable.
 
 ### 2. The Rooms Dataset (Ch1 onward — the Shakespeare)
 ```
@@ -87,34 +96,27 @@ Identical prefix, different completions. Shows vote counting in 5 minutes. Dispo
 "The hamster is in the bedroom. The bedroom is upstairs."
 ...10 sources
 ```
-Verifiable ground truth. Multi-hop facts. Simple enough for a slide, rich enough for every chapter.
+Verifiable ground truth. Multi-hop. Carries the whole course.
 
-### 3. The Conflicting Facts Dataset (Ch3 onward)
+### 3. The Conflicting Facts (Ch3 onward)
 ```
 Source A: "The capital of Australia is Canberra (federal capital since 1913)"
 Source B: "The capital of Australia is Sydney (largest city and economic center)"
 ```
-The model picks one. The bars show which. Set a budget to limit the wrong source. This is where attribution stops being academic.
+The model picks one. The bars show which. This is where attribution matters.
 
 ## Per-Chapter Structure
 
-Each chapter has three files:
-
 | File | Purpose | Who writes it |
 |---|---|---|
-| `chNN.ipynb` | The lesson — code + explanations | The student works through this |
-| `chNN.py` | The artifact — runnable from CLI | The student builds this |
-| `viz/` | The dashboard — renders results beautifully | Provided. Import and call `show()` |
+| `chNN.ipynb` | The lesson — code + explanations | Student works through this |
+| `chNN.py` | The artifact — runnable from CLI | Student builds this |
+| `viz/` | Dashboard (Ch3+) — renders results | Provided infrastructure |
 
-The student's code stays focused on attribution. The visualization is infrastructure.
+The student's code stays focused on attribution. Visualization is either inline (Ch1-2) or provided (Ch3+).
 
-## Two Paths to Attribution
+## The Ensemble = One Model, N Prompts
 
-| | Ensemble (Ch 1-3) | Single-Model (Ch 4-5) |
-|---|---|---|
-| **How** | Each source gets its own model | All sources in one context |
-| **Attribution** | Count/weight votes | Leave-one-out + Lipschitz |
-| **Privacy** | GNMax on vote tallies | Gaussian on logits |
-| **Advantage** | Simple, exact, black-box | Cheaper, cross-source reasoning |
+The ensemble doesn't require N model instances. It uses **one model, N different prompts** — each prompt contains one source + the question. From the model's perspective: N independent queries. From ours: an ensemble. Works with local GPT-2, API calls, anything.
 
-Same RDP accountant. Same dashboard. Ch7 connects them: PATE = ensemble for training.
+This naturally motivates Ch4: "we're running 10 prompts. What if we ran 1?"

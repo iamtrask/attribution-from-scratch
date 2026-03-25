@@ -2,54 +2,54 @@
 
 The visualization module for Attribution from Scratch. This is **provided infrastructure**, not a teaching artifact. You import it, you call `show()`, you see your results beautifully. Like matplotlib for attribution.
 
+**Introduced in Ch3** when budgets, spend meters, and exhaustion markers outgrow inline HTML. Ch1-2 use inline notebook rendering (zero dependencies).
+
 ## Usage
 
 ```python
 from viz import show
 
-# After running your attribution code:
 results = ensemble_vote(sources, query)
 show(results, sources)
 # Opens http://localhost:5001 with the interactive dashboard
 ```
 
-## What it renders
+## Inline rendering (Ch1-2, always available)
 
-- **Source sidebar:** each source with its color, text preview, and spend meter
-- **Context blocks:** the source documents in the prompt, color-coded
-- **Generated tokens:** with colored attribution bars underneath each token
-- **Hover tooltips:** per-source influence breakdown for any token
-- **Budget controls:** per-source ε input (when results include budget data)
-- **Exhaustion markers:** visual indicators when sources hit their budget
-
-## Results format
-
-The `show()` function renders whatever fields are present in the results dict. Each chapter adds fields as new concepts are introduced:
+For simple attribution (no budgets), inline HTML in the notebook works fine:
 
 ```python
-# Ch1: just votes
-{"tokens": ["bedroom"], "attribution": [{"Hamster Report": 1.0, "Cat Report": 0.0, ...}]}
+from IPython.display import HTML
+html = ""
+for token, attr in zip(tokens, attributions):
+    max_source = max(attr, key=attr.get)
+    color = COLORS[max_source]
+    html += f'<span style="border-bottom:3px solid {color};padding:2px">{token}</span> '
+display(HTML(html))
+```
 
-# Ch2: weighted votes
-{"tokens": [...], "attribution": [{"Hamster Report": 0.85, "Cat Report": 0.03, ...}]}
+This always works — even after the dashboard is introduced. Two interfaces, same results.
+
+## Dashboard (Ch3+)
+
+The full interactive dashboard with budget controls, spend meters, exhaustion markers, mode toggles, and hover tooltips. Renders whatever fields are present in the results dict:
+
+```python
+# Ch1-2: just attribution
+{"tokens": [...], "attribution": [{"Hamster Report": 1.0, ...}]}
 
 # Ch3: add budgets
 {"tokens": [...], "attribution": [...],
  "budgets": {"Hamster Report": {"spent": 2.3, "limit": 5.0}, ...}}
 
-# Ch4: add lipschitz bound
+# Ch4: add mode + lipschitz
 {"tokens": [...], "attribution": [...], "budgets": {...},
  "lip_bound": 2.2e83, "mode": "single-model"}
-
-# Ch5: add per-individual accounting
-{"tokens": [...], "attribution": [...], "budgets": {...},
- "lip_bound": 2.2e83, "per_source_norms": {...}}
 ```
-
-The dashboard gracefully handles missing fields — Ch1 results render without budget meters, Ch4 results render without training attribution, etc.
 
 ## Design philosophy
 
-- **Not taught, just used.** Students don't learn Flask/HTML/JS. They call `show()`.
-- **Gorgeous from day one.** The same polished dashboard works for Ch1's simple votes and Ch8's DeepSeek-R1 attribution.
-- **The code is here if you're curious.** But understanding it is not required for the course.
+- **Not taught, just used.** Students don't learn Flask/HTML/JS.
+- **Inline first, dashboard when needed.** Ch1-2 have zero viz dependencies.
+- **Both interfaces forever.** Inline rendering always available alongside the dashboard.
+- **The code is here if you're curious.** Understanding it is not required.

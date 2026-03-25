@@ -2,26 +2,26 @@
 
 ## The Idea
 
-Equal-weight voting fails on multi-hop questions. FTPL assigns adaptive weights. The weights ARE attribution. The dashboard now shows weighted bars.
+Equal-weight voting fails on multi-hop questions. FTPL assigns adaptive weights. The weights ARE attribution. Still inline HTML — no dashboard yet.
 
 ## What the Student Builds
 
-1. **Why equal weights fail** — multi-hop: "Which floor is the cat on?" needs two facts (~20 lines)
-2. **FTPL weighting** — calibration, Gumbel perturbation, softmax → weights (~60 lines)
+1. **Why equal weights fail** — "Which floor is the cat on?" needs "cat→kitchen" + "kitchen→first floor." One model with one source can't answer. (~20 lines)
+2. **FTPL weighting** — calibration phase, Gumbel perturbation, softmax → weights (~60 lines)
 3. **Weighted vote** — multi-hop works (~20 lines)
-4. **See it** — `show(results)` now renders weighted bars instead of binary votes
+4. **Inline viz** — same HTML pattern from Ch1, bars now proportional to weight:
+
+```python
+for source, weight in sorted(attr.items(), key=lambda x: -x[1]):
+    bar = "█" * int(weight * 40)
+    print(f"  {source:20s} {bar} {weight:.0%}")
+```
 
 ## The Artifact
 
-**Notebook:** `ch02.ipynb` — ~120 lines. FTPL on the rooms dataset.
-**Script:** `ch02.py` — CLI with weighted attribution.
-**Viz:** dashboard shows "Source 1: 58%, Source 5: 37%..." — weighted bars.
-
-Results format grows:
-```python
-{"tokens": [...], "attribution": [{"Hamster Report": 0.85, ...}]}
-# attribution values are now floats (weights) not binary (0/1)
-```
+**Notebook:** `ch02.ipynb` — ~120 lines. FTPL on the rooms dataset. Inline colored tokens + text bar charts.
+**Script:** `ch02.py`
+**Still no viz server.** Still zero extra dependencies.
 
 ## Key Ideas
 
@@ -32,8 +32,9 @@ Results format grows:
 
 ## Assets Inherited (from Ch1)
 
-- Ensemble voting, `corpus.py`, viz dashboard
+- Ensemble voting (one model, N prompts), `corpus.py`, inline HTML pattern
 
 ## Assets Produced (for Ch3)
 
 - FTPL weighting function
+- The concern: "weights leak source information"
