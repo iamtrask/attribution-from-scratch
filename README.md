@@ -12,80 +12,65 @@ This series picks up where Karpathy's [Zero to Hero](https://karpathy.ai/zero-to
 
 ## Syllabus
 
-### Part I: Counting Votes
+### Part I: Ensemble Attribution (the app ships in Ch1)
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 1 | [Counting Votes](ch01_counting_votes/) | N-gram model with perfect attribution — just read off who voted |
+| 1 | [Ensemble Attribution](ch01_ensemble_attribution/) | N-gram votes → LLM ensemble → **the web app with URLs**. Working product in chapter 1. |
+| 2 | [Weighted Voting](ch02_weighted_voting/) | FTPL adaptive weights. Multi-document reasoning. The app shows weighted attribution. |
+| 3 | [Private Voting](ch03_private_voting/) | GNMax + RDP accountant (autodp from scratch). Budget controls in the app. |
 
-### Part II: Ensemble Attribution
-
-| # | Chapter | What You Build |
-|---|---------|---------------|
-| 2 | [Ensemble Voting](ch02_ensemble_voting/) | Multiple LLMs, each sees one source. Vote counting = attribution |
-| 3 | [Weighted Ensemble](ch03_weighted_ensemble/) | FTPL adaptive weights for multi-document reasoning. Weights = attribution |
-| 4 | [Private Ensemble](ch04_private_ensemble/) | GNMax noise + RDP accountant. Build autodp from scratch |
-| 5 | [The Citation App](ch05_citation_app/) | Web app + URLs. Paste links, get attributed answers with citations |
-
-### Part III: Single-Model Attribution
+### Part II: Single-Model Attribution (going cheaper)
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 6 | [Votes Break](ch06_votes_break/) | Linear SGD blends sources. Leave-one-out. The single-model problem. |
-| 7 | [Sensitivity Bounds](ch07_sensitivity_bounds/) | Lipschitz bounds: linear (4.7) → GPT-2 (10^83). Build `LipschitzTensor` |
-| 8 | [Single-Model Privacy](ch08_single_model_privacy/) | DP noise calibrated to Lipschitz bounds. Both modes in one app |
+| 4 | [The Single-Model Path](ch04_single_model/) | Linear SGD → Lipschitz bounds → GPT-2 (10^83). Both modes in one app. |
+| 5 | [Single-Model Privacy](ch05_single_model_privacy/) | DP noise calibrated to Lipschitz bounds. Per-individual accounting. |
 
-### Part IV: Going Deeper, Going Faster
+### Part III: Going Deeper, Going Faster
 
 | # | Chapter | What You Build |
 |---|---------|---------------|
-| 9 | [Training Attribution](ch09_training_attribution/) | DP-SGD + PATE. Where do the weights come from? Full end-to-end |
-| 10 | [GPU Acceleration](ch10_gpu_acceleration/) | MLX on Apple Silicon. 40x speedup. Qwen3 0.6B |
-| 11 | [SOTA Models](ch11_sota_models/) | DeepSeek-R1 + llama.cpp. The full production pipeline |
+| 6 | [Training Attribution](ch06_training_attribution/) | PATE (ensemble for training!) + DP-SGD sidebar. End-to-end attribution. |
+| 7 | [GPU Acceleration](ch07_gpu_acceleration/) | MLX on Apple Silicon. 40x speedup. Qwen3 0.6B. |
+| 8 | [SOTA Models](ch08_sota_models/) | DeepSeek-R1 + llama.cpp. KV-cache attribution. The full pipeline. |
 
 ---
 
 ## The Arc
 
 ```
-PART I — VOTING
-  Ch 1: n-gram votes                "attribution = counting who voted"
+PART I — ENSEMBLE (app ships in Ch1!)
+  Ch 1: n-gram → LLM ensemble → app + URLs     "paste URLs, see attribution"
+  Ch 2: FTPL weighted voting                     "blend sources for complex questions"
+  Ch 3: GNMax + RDP (build autodp)               "make the votes private"
 
-PART II — ENSEMBLE (multiple models, attribution through architecture)
-  Ch 2: ensemble voting              "each source gets its own model"
-  Ch 3: weighted ensemble / FTPL     "weight the votes for multi-doc reasoning"
-  Ch 4: private ensemble / GNMax     "make the votes private — build autodp"
-  Ch 5: the app + URLs               "paste URLs, get cited answers"  ← WORKING PRODUCT
+PART II — SINGLE MODEL (going cheaper)
+  Ch 4: linear SGD → Lipschitz → GPT-2           "one model, all sources, bound the influence"
+  Ch 5: DP for inference                          "noise + budgets inside one model"
 
-PART III — SINGLE MODEL (one model, all sources in context)
-  Ch 6: linear SGD                   "votes break when sources blend"
-  Ch 7: Lipschitz bounds             "bound how much any source CAN do"
-  Ch 8: DP for inference             "noise + budgets inside one model"
-
-PART IV — SCALE
-  Ch 9: training attribution         "DP-SGD + PATE (ensemble for training!)"
-  Ch 10: GPU acceleration            "40x faster on your laptop"
-  Ch 11: SOTA models                 "DeepSeek-R1 on real documents"
+PART III — SCALE
+  Ch 6: training attribution (PATE)               "where do the weights come from?"
+  Ch 7: GPU acceleration (MLX)                    "40x faster"
+  Ch 8: DeepSeek-R1                               "the full production pipeline"
 ```
+
+The app exists from Ch1 and grows with every chapter. By Ch8, it's a production-grade citation engine on SOTA models.
 
 ## Two Paths to Attribution
 
-| | Ensemble Path (Ch 2-5) | Single-Model Path (Ch 6-8) |
+| | Ensemble Path (Ch 1-3) | Single-Model Path (Ch 4-5) |
 |---|---|---|
 | **How** | Each source gets its own model. Models vote. | All sources in one context. Bound the forward pass. |
 | **Attribution** | Count/weight the votes | Leave-one-out + Lipschitz bounds |
 | **Privacy** | GNMax noise on vote tallies | Gaussian noise on logits, calibrated to L |
-| **Advantage** | Simple, exact, black-box | One model, standard RAG, cross-source reasoning |
+| **Advantage** | Simple, exact, black-box | One model, cheaper, cross-source reasoning |
 | **Disadvantage** | N model instances | Huge sensitivity bounds |
 
-They share the same RDP accountant (Ch4) and merge in the app (Ch5/Ch8).
+They share the same RDP accountant (Ch3) and live in the same app. Ch6 connects them: PATE applies the ensemble to training.
 
-Ch9 connects them: PATE applies the ensemble approach to TRAINING — the course comes full circle.
+## The Running Examples
 
-## The Running Example
+**Animals in rooms** (Ch1-3): 10 documents, simple lookups. "The hamster is in the bedroom." Where everyone starts.
 
-10 documents about animals in rooms. Used in every chapter.
-
-> "The cat is in the kitchen." · "The dog is in the garden." · "The hamster is in the bedroom." · ...
-
-Query: **"The hamster is in the"** → model predicts **"bedroom"** → colored bars show the Hamster Report drove it.
+**Conflicting sources** (Ch3+): Wikipedia articles that disagree about a fact. The model picks one. You see WHICH one and WHY. Attribution matters when sources can't all be trusted.
