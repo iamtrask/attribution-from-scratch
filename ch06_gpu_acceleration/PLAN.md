@@ -2,33 +2,33 @@
 
 ## The Idea
 
-Palate cleanser after two dense DP chapters (Ch4-5). Everything works, everything is slow. MLX gives 40-50× speedup. Upgrade to Qwen3 0.6B. Fun, visual, satisfying.
+Palate cleanser. Everything is slow. MLX gives 40-50×. Upgrade to Qwen3 0.6B. Fun, visual, satisfying. The benchmark table is the dopamine hit.
 
 ## What the Student Builds
 
-1. **MLX port of GPT-2** — `gpt2_mlx.py`, nearly 1:1 with numpy (~100 lines)
-2. **Fused Lipschitz** — scalar side-channel, zero overhead. The key optimization. (~200 lines)
-3. **MLX Qwen3 0.6B** — RoPE, RMSNorm, SwiGLU, GQA (~150 lines)
-4. **Benchmark** — the table. NumPy 600ms → MLX 15ms. (~80 lines)
-5. **Accelerated ensemble** — batched inference for N models in one pass
-6. **App upgrade** — both modes at interactive speed on Qwen
+1. **MLX port of GPT-2** (~100 lines)
+2. **Fused Lipschitz** — zero-overhead scalar side-channel (~200 lines)
+3. **MLX Qwen3 0.6B** (~150 lines)
+4. **Benchmark** — the table (~80 lines)
+5. **Accelerated ensemble** — batched inference
+6. **See it** — same dashboard, dramatically faster
 
-### The Artifact
+## The Artifact
 
-The benchmark table. The app running Qwen at ~15ms/token. Both modes fast.
+**Notebook:** `ch06.ipynb` — ports + benchmark.
+**Script:** `ch06.py --benchmark`
+**Viz:** the dashboard at ~15ms/token. Interactive speed.
 
 ## Key Ideas
 
-1. **Unified memory:** no CPU↔GPU copies
-2. **Fused Lipschitz:** naive wrappers kill GPU perf. Scalar side-channel fixes it.
-3. **Batched inference:** N ensemble members in one pass
+1. **Unified memory, lazy evaluation, fused Lipschitz.**
+2. **Benchmark: 600ms → 15ms.**
 
 ## Assets Inherited (from Ch5)
 
-- The complete app with both private modes
+- Complete private attribution system (both modes)
 
 ## Assets Produced (for Ch7)
 
 - `gpt2_mlx.py`, `qwen_mlx.py`, `lipschitz_mlx.py`
-- The app at interactive speed
-- Emotional recharge for Ch7's training theory
+- Emotional recharge for Ch7

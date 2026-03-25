@@ -2,32 +2,35 @@
 
 ## The Idea
 
-Ch1-6 treat the model as frozen weights. But the weights encode training data. PATE applies Ch1's ensemble to TRAINING: separate models, separate data, vote on student labels. The course comes full circle. DP-SGD is the sidebar.
+PATE = Ch1's ensemble applied to training. The course comes full circle. Same `rdp_accountant.py` powers everything. DP-SGD is the sidebar.
 
 ## What the Student Builds
 
-1. **The problem** — "which training data influenced these weights?" N × full training = impractical. (~20 lines)
-2. **PATE** — N teachers on data partitions, vote on student labels. Reuse `rdp_accountant.py`. (~100 lines)
-   - "This is Ch1's ensemble, but for training."
-3. **End-to-end** — PATE (training DP) + Ch5 (inference DP). Two ε budgets. (~50 lines)
-4. **Sidebar: DP-SGD** — clip gradients, add noise. More general, worse tradeoff. (~50 lines, optional)
-5. **MoE discussion** — Mixture-of-Experts as natural PATE. Each expert trained on different data.
+1. **PATE** — N teachers, data partitions, vote on student labels (~100 lines)
+2. **End-to-end** — PATE (training) + Ch5 (inference). Two ε budgets. (~50 lines)
+3. **Sidebar: DP-SGD** — clip gradients, add noise (~50 lines, optional)
+4. **MoE discussion** — natural architectural partitioning
 
-### The Artifact
+## The Artifact
 
-Full attribution: "training data X built these weights AND prompt source Y drove this output."
+**Notebook:** `ch07.ipynb` — PATE + end-to-end.
+**Script:** `ch07.py`
+**Viz:** dashboard shows both training ε and inference ε.
 
 ## Key Ideas
 
-1. **PATE is Ch1's ensemble applied to training.** Full circle.
-2. **Two ε budgets:** training + inference
-3. **Same `rdp_accountant.py` powers everything**
+1. **PATE is Ch1's ensemble for training. Full circle.**
+2. **Two ε budgets: training + inference.**
+3. **Same accountant powers everything.**
 
 ## Assets Inherited (from Ch6)
 
-- The fast app, all previous infrastructure
+- The fast app, all infrastructure
 
 ## Assets Produced (for Ch8)
 
-- PATE training pipeline
-- End-to-end attribution
+- PATE pipeline, end-to-end attribution
+
+## Course Completion
+
+**Ch1-7 is the complete course.** The student has: ensemble attribution, weighted voting, private voting, single-model bounds, single-model DP, GPU acceleration, training attribution. All sharing one RDP accountant, all visible in one dashboard. Ch8 is the bonus level.
