@@ -1,12 +1,19 @@
-# Chapter 1: Ensemble Attribution — Voting All the Way Up
+# Lecture 1: What Is Attribution, Why Is It Hard?
 
-## The Idea
+## The Arc
 
-Three beats: (1) YOU are the model — do attribution by hand, (2) n-gram votes make it literal, (3) one LLM, N prompts — same vote counting, automated. Colored text in the notebook. Zero dependencies. 15 minutes.
+Four beats that take the student from "attribution is trivial" to "oh no, this is actually hard" to "wait, there's a way out":
 
-## Datasets Introduced
+1. **N-gram counts** — attribution is just looking up who voted. Trivial.
+2. **Perceptron** — attribution is input × weight. Still easy. Decomposable.
+3. **Logistic regression** — add a sigmoid and attribution breaks. The nonlinearity mixes sources. You can't decompose the output anymore. THIS is why attribution is hard.
+4. **LLM ensemble** — the escape hatch. Don't let sources mix inside the model. Give each source its own prompt. Vote. Attribution is back to counting. Easy again.
 
-### The Voting Dataset (Beat 2 only — disposable)
+The lecture ends with the student holding two things in their head: (a) a hard problem they want to solve (attribution through nonlinearities), and (b) a working solution that sidesteps it (the ensemble). The rest of the course explores both paths.
+
+## Datasets
+
+### The Voting Dataset (Beat 1 only — disposable)
 
 ```
 Source 1: "I believe the best pet is a cat"
@@ -14,9 +21,9 @@ Source 2: "I believe the best pet is a dog"
 Source 3: "I believe the best pet is a hamster"
 ```
 
-Identical prefix, different completions. Shows vote counting mechanically. 5 minutes. Never used again.
+Identical prefix, different completions. Shows vote counting in 5 minutes. Never used again.
 
-### The Rooms Dataset (Beat 3 onward — the Shakespeare)
+### The Rooms Dataset (Beat 2 onward — the Shakespeare)
 
 ```
 Source 1: "The cat is in the kitchen. The kitchen is on the first floor."
@@ -27,38 +34,46 @@ Source 5: "The fish is in the pond. The pond is in the garden."
 ...10 sources
 ```
 
-Verifiable ground truth. Multi-hop facts for Ch2. Carries the entire course.
+Verifiable ground truth. Multi-hop facts for Lecture 2. Carries the entire course.
 
 ## What the Student Builds
 
-### Beat 1: "YOU are the model" (~5 minutes, 0 lines of code)
-
-The student plays the language model manually:
-- "Here are 3 documents. I'm going to ask you a question 3 times. Each time you can only see ONE document."
-- Question: "Where is the hamster?"
-- With doc 1 (cat/kitchen): "I don't know" or "kitchen?"
-- With doc 3 (hamster/bedroom): "bedroom!"
-- Count the votes. Doc 3 won. That's attribution. You just did it in your head.
-
-**The lesson:** attribution is not complicated. It's "ask separately, count the answers."
-
-### Beat 2: N-gram votes (~20 lines)
+### Beat 1: N-gram votes (~20 lines)
 
 - Bigram model on the voting dataset
-- Identical prefix → vote tally is just counts
-- Print a text bar chart:
+- Each source contributes counts. Identical prefix → vote tally is just counts.
+- Print attribution:
   ```
   cat     ███ 33%
   dog     ███ 33%
   hamster ███ 33%
   ```
-- "A language model is a voting system. Attribution = counting."
+- **Lesson:** "A language model is a voting system. Attribution = counting who voted."
+- **This is trivially easy.** Savor it.
 
-### Beat 3: LLM ensemble — one model, N prompts (~40 lines)
+### Beat 2: Perceptron (~30 lines)
 
-- Switch to rooms dataset
-- ONE model (GPT-2 locally, or any API). Run it N times, each with a different source in the prompt: `"[Source doc]. Question: Where is the hamster?"`
-- The model doesn't see the other sources. From its perspective, N independent queries.
+- Switch to the rooms dataset. Bag-of-words features.
+- Single-layer perceptron (no activation function). Train it.
+- Output = Σ(source_i_input × weight). Perfectly decomposable.
+- Print per-source contributions. They sum to the output exactly.
+- **Lesson:** "Linear models are perfectly attributable. Each source's contribution = its input × the weight."
+- **Still easy.** The output is a sum of parts. You can point to each part.
+
+### Beat 3: Logistic regression — attribution breaks (~30 lines)
+
+- Same model, same data. Add a sigmoid: output = σ(Σ(source_i_input × weight))
+- Try to decompose: the per-source contributions no longer sum to the output. The sigmoid mixes them nonlinearly.
+- Show it concretely: source A contributes 2.0, source B contributes 1.0, but σ(3.0) ≠ σ(2.0) + σ(1.0). The nonlinearity creates interaction terms.
+- **Lesson:** "One nonlinearity. That's all it takes. The sources get mixed, and you can't un-mix them."
+- **This is the crisis.** Every real model — MLPs, transformers, GPT-4 — is made of nonlinearities stacked on nonlinearities. Attribution through them is the hard problem.
+- The student feels it: "how do I attribute through a deep network if I can't even do it through a sigmoid?"
+
+### Beat 4: LLM ensemble — the escape (~40 lines)
+
+- "What if sources never mix inside the model?"
+- One model, N prompts. Each prompt has one source + the question.
+- The model processes each source INDEPENDENTLY. No mixing. No nonlinear interaction between sources.
 - Collect predictions. Count votes. Print colored inline HTML:
 
 ```python
@@ -70,25 +85,36 @@ for token, attr in zip(tokens, attributions):
 display(HTML(html))
 ```
 
-- Works with any model — local GPT-2, Claude API, GPT-4, whatever.
-- **The lesson:** same idea as Beat 1, automated. Same idea as Beat 2, real model.
+- Works with any model — local GPT-2, API calls, anything.
+- **Lesson:** "Attribution is hard because sources mix. The ensemble prevents mixing. Attribution is easy again."
+- **But:** you're running the model N times. And the model can't cross-reference sources. There's a cost.
 
 ## The Artifact
 
-**Notebook:** `ch01.ipynb` — ~60 lines of actual code. Inline colored HTML. Zero dependencies beyond numpy + a model.
-**Script:** `ch01.py` — prints colored text to terminal.
-**No viz server.** No Flask. No localhost. Just a notebook.
+**Notebook:** `lecture_01.ipynb` — ~120 lines of code across 4 beats. Inline colored HTML. Zero dependencies beyond numpy + a model.
+**Script:** `lecture_01.py` — prints colored text to terminal.
 
 ## Key Ideas
 
-1. **Attribution = "ask separately, count the answers."** You did it by hand in Beat 1.
-2. **Ensemble = one model, N prompts.** Not N model instances. One model, N contexts.
-3. **Limitation: all votes are equal.** → Ch2
-4. **This naturally motivates Ch4:** "we're running the model 10 times. What if we ran it ONCE with all sources in the prompt?"
+1. **Attribution is easy when sources don't mix.** N-grams (counting), perceptrons (linear decomposition), ensembles (separate prompts).
+2. **Attribution is hard when sources DO mix.** One sigmoid is enough to break it. Deep networks are hundreds of nonlinearities deep.
+3. **The ensemble sidesteps the problem** by preventing sources from mixing. It works, but costs N forward passes and can't cross-reference sources.
+4. **Two open problems for the rest of the course:**
+   - **Ensemble path (Lectures 2-3):** Can we make the ensemble smarter (weighted votes) and private (noisy votes)?
+   - **Single-model path (Lectures 4-5):** Can we do attribution THROUGH the nonlinearities? (Lipschitz bounds, differential privacy)
 
-## Assets Produced (for Ch2)
+## Assets Produced (for Lecture 2)
 
-- `corpus.py` — the rooms dataset
+- `corpus.py` — the rooms dataset (10 sources with multi-hop facts)
 - The ensemble voting function (one model, N prompts)
 - The inline HTML rendering pattern
-- Results format: `{"tokens": [...], "attribution": [{"Hamster Report": 1.0, ...}]}`
+- The trained perceptron + logistic regression (reused in Lecture 4 as the simple case for Lipschitz bounds)
+- The student's understanding: attribution is easy without mixing, hard with mixing
+
+## Pacing
+
+- Beat 1: 5 minutes. "This is easy."
+- Beat 2: 5 minutes. "Still easy."
+- Beat 3: 10 minutes. "Oh no." (The σ(a+b) ≠ σ(a)+σ(b) demo is the key moment.)
+- Beat 4: 10 minutes. "Oh wait, there's a trick." (Relief, but partial — the cost and limitations are real.)
+- Total: ~30 minutes of code. The rest is markdown explanation between cells.
