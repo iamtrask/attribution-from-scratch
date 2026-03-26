@@ -13,15 +13,18 @@ The lecture ends with the student holding two things in their head: (a) a hard p
 
 ## Datasets
 
-### The Voting Dataset (Beat 1 only — disposable)
+### The Hogwarts Survey Dataset (Beats 1-3)
+
+1000 survey responses from Hogwarts students about their favorite subject. Four houses (Gryffindor, Slytherin, Hufflepuff, Ravenclaw), each with distinct preferences and realistic noise.
 
 ```
-Source 1: "I believe the best pet is a cat"
-Source 2: "I believe the best pet is a dog"
-Source 3: "I believe the best pet is a hamster"
+"As a member of Gryffindor, my favorite subject is Defense Against the Dark Arts"
+"As a member of Slytherin, my favorite subject is Potions"
+"As a member of Hufflepuff, my favorite subject is Herbology"
+"As a member of Ravenclaw, my favorite subject is Charms"
 ```
 
-Identical prefix, different completions. Shows vote counting in 5 minutes. Never used again.
+The house is a natural source/group ID baked into the text. When the model predicts "Potions", you trace it to Slytherin. The question "which group drove this prediction?" is attribution. 250 responses per house, 7 subjects, strong preferences with noise (some Gryffindors like Potions, some Slytherins like Herbology). See `corpus.py`.
 
 ### The Rooms Dataset (Beat 2 onward — the Shakespeare)
 
@@ -40,39 +43,41 @@ Verifiable ground truth. Multi-hop facts for Lecture 2. Carries the entire cours
 
 ### Beat 1: N-gram votes (~20 lines)
 
-- Bigram model on the voting dataset
-- Each source contributes counts. Identical prefix → vote tally is just counts.
-- Print attribution:
+- Bigram model trained on the Hogwarts survey (1000 responses)
+- Prompt: "my favorite subject is"
+- The bigram table has counts per next word, traceable to each house:
   ```
-  cat     ███ 33%
-  dog     ███ 33%
-  hamster ███ 33%
+  Potions     ██████████████ 172  (Slytherin: 122, Ravenclaw: 26, ...)
+  Herbology   ██████████ 147      (Hufflepuff: 107, Slytherin: 15, ...)
+  Defense     █████████ 219       (Gryffindor: 126, Slytherin: 47, ...)
+  Charms      ████████ 158        (Ravenclaw: 77, Hufflepuff: 40, ...)
   ```
+- Attribution = reading off which house contributed which counts. Exact. Free.
 - **Lesson:** "A language model is a voting system. Attribution = counting who voted."
 - **This is trivially easy.** Savor it.
 
 ### Beat 2: Perceptron (~30 lines)
 
-- Switch to the rooms dataset. Bag-of-words features.
+- Same dataset. Bag-of-words features per house. Predict: which subject?
 - Single-layer perceptron (no activation function). Train it.
-- Output = Σ(source_i_input × weight). Perfectly decomposable.
-- Print per-source contributions. They sum to the output exactly.
+- Output = Σ(house_i_input × weight). Perfectly decomposable.
+- Print per-house contributions. They sum to the output exactly.
+- "Slytherin contributed 0.6 toward Potions, Ravenclaw contributed 0.2, Gryffindor contributed 0.1..."
 - **Lesson:** "Linear models are perfectly attributable. Each source's contribution = its input × the weight."
 - **Still easy.** The output is a sum of parts. You can point to each part.
 
 ### Beat 3: Logistic regression — attribution breaks (~30 lines)
 
-- Same model, same data. Add a sigmoid: output = σ(Σ(source_i_input × weight))
-- Try to decompose: the per-source contributions no longer sum to the output. The sigmoid mixes them nonlinearly.
-- Show it concretely: source A contributes 2.0, source B contributes 1.0, but σ(3.0) ≠ σ(2.0) + σ(1.0). The nonlinearity creates interaction terms.
+- Same model, same data. Add a sigmoid: output = σ(Σ(house_i_input × weight))
+- Try to decompose: the per-house contributions no longer sum to the output. The sigmoid mixes them nonlinearly.
+- Show it concretely: Slytherin contributes 2.0, Ravenclaw contributes 1.0, but σ(3.0) ≠ σ(2.0) + σ(1.0). The nonlinearity creates interaction terms. You can't say "Slytherin was responsible for X% of the output."
 - **Lesson:** "One nonlinearity. That's all it takes. The sources get mixed, and you can't un-mix them."
-- **This is the crisis.** Every real model — MLPs, transformers, GPT-4 — is made of nonlinearities stacked on nonlinearities. Attribution through them is the hard problem.
-- The student feels it: "how do I attribute through a deep network if I can't even do it through a sigmoid?"
+- **This is the crisis.** Every real model — MLPs, transformers, GPT-4 — is nonlinearities stacked on nonlinearities. If you can't attribute through a single sigmoid, how do you attribute through a hundred layers of them?
 
 ### Beat 4: LLM ensemble — the escape (~40 lines)
 
 - "What if sources never mix inside the model?"
-- One model, N prompts. Each prompt has one source + the question.
+- Switch to the rooms dataset. One model, N prompts. Each prompt has one source + the question.
 - The model processes each source INDEPENDENTLY. No mixing. No nonlinear interaction between sources.
 - Collect predictions. Count votes. Print colored inline HTML:
 
