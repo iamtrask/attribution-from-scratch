@@ -18,13 +18,15 @@ The lecture ends with the student holding two things in their head: (a) a hard p
 1000 students share who they think the next headmaster should be. Students overwhelmingly prefer their own head of house, with realistic noise.
 
 ```
-"As a member of Gryffindor, I think the next headmaster should be McGonagall"
-"As a member of Slytherin, I think the next headmaster should be Snape"
-"As a member of Hufflepuff, I think the next headmaster should be Sprout"
-"As a member of Ravenclaw, I think the next headmaster should be Flitwick"
+"My name is Harry Potter. As a member of Gryffindor, I think the next headmaster should be McGonagall"
+"My name is Draco Malfoy. As a member of Slytherin, I think the next headmaster should be Snape"
+"My name is Cedric Diggory. As a member of Hufflepuff, I think the next headmaster should be Sprout"
+"My name is Luna Lovegood. As a member of Ravenclaw, I think the next headmaster should be Flitwick"
 ```
 
-It's a survey — just opinions from 1000 people. But when we train an n-gram model on it, we'll see that the model is secretly counting these opinions like votes. Attribution is about tracking whose influence got counted. 250 respondents per house, 6 candidates, strong house loyalty with noise. See `corpus.py`.
+Each response has a name, a house, and an opinion. It's a survey — just 1000 people sharing what they think. But when we train an n-gram model on it, we'll see that the model is secretly counting these opinions like votes. Attribution is about tracking whose influence got counted.
+
+Both structured data (name, house, candidate columns) and full sentences available. 250 respondents per house, 6 candidates, strong house loyalty with noise. Known HP characters first, then generated wizard names. See `corpus.py`.
 
 ### The Rooms Dataset (Beat 2 onward — the Shakespeare)
 
