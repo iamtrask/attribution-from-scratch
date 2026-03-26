@@ -13,18 +13,18 @@ The lecture ends with the student holding two things in their head: (a) a hard p
 
 ## Datasets
 
-### The Hogwarts Survey Dataset (Beats 1-3)
+### The Hogwarts Headmaster Survey (Beats 1-3)
 
-1000 survey responses from Hogwarts students about their favorite subject. Four houses (Gryffindor, Slytherin, Hufflepuff, Ravenclaw), each with distinct preferences and realistic noise.
+1000 students share who they think the next headmaster should be. Students overwhelmingly prefer their own head of house, with realistic noise.
 
 ```
-"As a member of Gryffindor, my favorite subject is Defense Against the Dark Arts"
-"As a member of Slytherin, my favorite subject is Potions"
-"As a member of Hufflepuff, my favorite subject is Herbology"
-"As a member of Ravenclaw, my favorite subject is Charms"
+"As a member of Gryffindor, I think the next headmaster should be McGonagall"
+"As a member of Slytherin, I think the next headmaster should be Snape"
+"As a member of Hufflepuff, I think the next headmaster should be Sprout"
+"As a member of Ravenclaw, I think the next headmaster should be Flitwick"
 ```
 
-The house is a natural source/group ID baked into the text. When the model predicts "Potions", you trace it to Slytherin. The question "which group drove this prediction?" is attribution. 250 responses per house, 7 subjects, strong preferences with noise (some Gryffindors like Potions, some Slytherins like Herbology). See `corpus.py`.
+It's a survey — just opinions from 1000 people. But when we train an n-gram model on it, we'll see that the model is secretly counting these opinions like votes. Attribution is about tracking whose influence got counted. 250 respondents per house, 6 candidates, strong house loyalty with noise. See `corpus.py`.
 
 ### The Rooms Dataset (Beat 2 onward — the Shakespeare)
 
@@ -41,38 +41,38 @@ Verifiable ground truth. Multi-hop facts for Lecture 2. Carries the entire cours
 
 ## What the Student Builds
 
-### Beat 1: N-gram votes (~20 lines)
+### Beat 1: The n-gram model is secretly counting votes (~20 lines)
 
-- Bigram model trained on the Hogwarts survey (1000 responses)
-- Prompt: "my favorite subject is"
-- The bigram table has counts per next word, traceable to each house:
+- Train a bigram model on the 1000 survey responses
+- Prompt: "the next headmaster should be"
+- The bigram table has counts — and we can trace each count to its source:
   ```
-  Potions     ██████████████ 172  (Slytherin: 122, Ravenclaw: 26, ...)
-  Herbology   ██████████ 147      (Hufflepuff: 107, Slytherin: 15, ...)
-  Defense     █████████ 219       (Gryffindor: 126, Slytherin: 47, ...)
-  Charms      ████████ 158        (Ravenclaw: 77, Hufflepuff: 40, ...)
+  McGonagall  █████████████████ 268  (Gryffindor: 141, Hufflepuff: 44, ...)
+  Flitwick    ██████████████ 219     (Ravenclaw: 122, Gryffindor: 39, ...)
+  Sprout      ████████████ 196       (Hufflepuff: 134, Ravenclaw: 26, ...)
+  Snape       ██████████ 166         (Slytherin: 135, Ravenclaw: 17, ...)
   ```
-- Attribution = reading off which house contributed which counts. Exact. Free.
-- **Lesson:** "A language model is a voting system. Attribution = counting who voted."
+- "The model predicted Snape. Whose influence got counted?" → read the table: 135 Slytherin, 17 Ravenclaw, 8 Hufflepuff, 6 Gryffindor.
+- **Lesson:** the n-gram model treats each training example as a vote. Attribution = tracking whose influence got counted.
 - **This is trivially easy.** Savor it.
 
-### Beat 2: Perceptron (~30 lines)
+### Beat 2: Perceptron — influence is still traceable (~30 lines)
 
-- Same dataset. Bag-of-words features per house. Predict: which subject?
-- Single-layer perceptron (no activation function). Train it.
+- Same survey data. Bag-of-words features per house. Predict: who becomes headmaster?
+- Single-layer perceptron (no activation). Train it with the perceptron update rule.
 - Output = Σ(house_i_input × weight). Perfectly decomposable.
 - Print per-house contributions. They sum to the output exactly.
-- "Slytherin contributed 0.6 toward Potions, Ravenclaw contributed 0.2, Gryffindor contributed 0.1..."
-- **Lesson:** "Linear models are perfectly attributable. Each source's contribution = its input × the weight."
-- **Still easy.** The output is a sum of parts. You can point to each part.
+- "Slytherin's influence: 0.6 toward Snape. Ravenclaw: 0.15. Gryffindor: 0.05..."
+- **Lesson:** "Linear models are perfectly attributable. Each group's influence = its input × the weight."
+- **Still easy.** The output is a sum of influences. You can trace each one.
 
-### Beat 3: Logistic regression — attribution breaks (~30 lines)
+### Beat 3: Logistic regression — influence gets mixed (~30 lines)
 
 - Same model, same data. Add a sigmoid: output = σ(Σ(house_i_input × weight))
-- Try to decompose: the per-house contributions no longer sum to the output. The sigmoid mixes them nonlinearly.
-- Show it concretely: Slytherin contributes 2.0, Ravenclaw contributes 1.0, but σ(3.0) ≠ σ(2.0) + σ(1.0). The nonlinearity creates interaction terms. You can't say "Slytherin was responsible for X% of the output."
-- **Lesson:** "One nonlinearity. That's all it takes. The sources get mixed, and you can't un-mix them."
-- **This is the crisis.** Every real model — MLPs, transformers, GPT-4 — is nonlinearities stacked on nonlinearities. If you can't attribute through a single sigmoid, how do you attribute through a hundred layers of them?
+- Try to decompose: the per-house influences no longer sum to the output. The sigmoid mixes them nonlinearly.
+- Show it concretely: Slytherin's influence is 2.0, Ravenclaw's is 1.0, but σ(3.0) ≠ σ(2.0) + σ(1.0). The nonlinearity creates interactions. You can't say "Slytherin was responsible for X% of the prediction."
+- **Lesson:** "One nonlinearity. That's all it takes. The influences get mixed, and you can't un-mix them."
+- **This is the crisis.** Every real model — MLPs, transformers, GPT-4 — is nonlinearities stacked on nonlinearities. If you can't trace influence through a single sigmoid, how do you trace it through a hundred layers of them?
 
 ### Beat 4: LLM ensemble — the escape (~40 lines)
 

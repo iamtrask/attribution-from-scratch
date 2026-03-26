@@ -1,89 +1,94 @@
 """
-corpus.py — Hogwarts Survey Dataset
+corpus.py — Hogwarts Headmaster Survey Dataset
 
-1000 survey responses from Hogwarts students about their favorite subject.
-Each house has strong preferences with realistic noise.
+1000 students share who they think the next Hogwarts headmaster should be.
+Students overwhelmingly prefer their own head of house, with realistic noise.
 
 Used throughout the course as the primary attribution dataset.
 """
 
 import random
 
-# House → subject preferences (weights, will be normalized to probabilities)
+# House → candidate preferences (weights, normalized to probabilities)
+# Each house strongly prefers their own head of house
 HOUSE_PREFERENCES = {
     "Gryffindor": {
-        "Defense Against the Dark Arts": 50,
-        "Transfiguration": 25,
-        "Charms": 10,
-        "Potions": 5,
-        "Herbology": 5,
-        "Care of Magical Creatures": 3,
-        "Divination": 2,
+        "McGonagall": 55,   # their head of house
+        "Flitwick": 15,
+        "Sprout": 12,
+        "Snape": 3,
+        "Hagrid": 10,
+        "Lupin": 5,
     },
     "Slytherin": {
-        "Potions": 50,
-        "Defense Against the Dark Arts": 20,
-        "Transfiguration": 10,
-        "Charms": 8,
-        "Herbology": 5,
-        "Care of Magical Creatures": 4,
-        "Divination": 3,
+        "Snape": 55,        # their head of house
+        "McGonagall": 15,
+        "Flitwick": 10,
+        "Sprout": 5,
+        "Hagrid": 3,
+        "Lupin": 12,
     },
     "Hufflepuff": {
-        "Herbology": 45,
-        "Care of Magical Creatures": 25,
-        "Charms": 15,
-        "Potions": 5,
-        "Transfiguration": 5,
-        "Defense Against the Dark Arts": 3,
-        "Divination": 2,
+        "Sprout": 55,       # their head of house
+        "McGonagall": 15,
+        "Flitwick": 12,
+        "Snape": 3,
+        "Hagrid": 10,
+        "Lupin": 5,
     },
     "Ravenclaw": {
-        "Charms": 40,
-        "Transfiguration": 25,
-        "Defense Against the Dark Arts": 15,
-        "Potions": 8,
-        "Herbology": 5,
-        "Divination": 5,
-        "Care of Magical Creatures": 2,
+        "Flitwick": 55,     # their head of house
+        "McGonagall": 18,
+        "Sprout": 10,
+        "Snape": 5,
+        "Hagrid": 4,
+        "Lupin": 8,
     },
 }
 
 HOUSES = list(HOUSE_PREFERENCES.keys())
-SUBJECTS = list(HOUSE_PREFERENCES["Gryffindor"].keys())
+CANDIDATES = list(HOUSE_PREFERENCES["Gryffindor"].keys())
+
+# Head of house mapping
+HEAD_OF_HOUSE = {
+    "Gryffindor": "McGonagall",
+    "Slytherin": "Snape",
+    "Hufflepuff": "Sprout",
+    "Ravenclaw": "Flitwick",
+}
 
 
 def generate_dataset(n=1000, seed=42):
-    """Generate n survey responses. Returns list of (house, subject, text) tuples."""
+    """Generate n survey responses. Returns list of (house, candidate, text) tuples."""
     rng = random.Random(seed)
     data = []
     per_house = n // len(HOUSES)
 
     for house in HOUSES:
         prefs = HOUSE_PREFERENCES[house]
-        subjects = list(prefs.keys())
+        candidates = list(prefs.keys())
         weights = list(prefs.values())
 
         for _ in range(per_house):
-            subject = rng.choices(subjects, weights=weights, k=1)[0]
-            text = f"As a member of {house}, my favorite subject is {subject}"
-            data.append((house, subject, text))
+            candidate = rng.choices(candidates, weights=weights, k=1)[0]
+            text = f"As a member of {house}, I think the next headmaster should be {candidate}"
+            data.append((house, candidate, text))
 
     rng.shuffle(data)
     return data
 
 
-def get_house_texts(data, house):
-    """Get all texts from a specific house."""
-    return [text for h, s, text in data if h == house]
+def get_house_responses(data, house):
+    """Get all response texts from a specific house."""
+    return [text for h, c, text in data if h == house]
 
 
-def get_subject_counts(data, house=None):
-    """Count subject preferences, optionally filtered by house."""
-    counts = {s: 0 for s in SUBJECTS}
-    for h, s, text in data:
+def get_candidate_counts(data, house=None):
+    """Count candidate preferences, optionally filtered by house."""
+    counts = {c: 0 for c in CANDIDATES}
+    for h, c, text in data:
         if house is None or h == house:
-            counts[s] += 1
+            counts[c] += 1
     return counts
 
 
@@ -109,18 +114,27 @@ ROOMS_NAMES = [
 
 if __name__ == "__main__":
     data = generate_dataset()
-    print(f"Generated {len(data)} responses\n")
+    print(f"Hogwarts Headmaster Survey — {len(data)} responses\n")
 
-    # Show distribution per house
+    # Overall results
+    total_counts = get_candidate_counts(data)
+    print("Overall results:")
+    for candidate, count in sorted(total_counts.items(), key=lambda x: -x[1]):
+        bar = "█" * (count // 4)
+        print(f"  {candidate:15s} {bar} {count}")
+
+    # Per-house breakdown
     for house in HOUSES:
-        counts = get_subject_counts(data, house)
+        counts = get_candidate_counts(data, house)
         total = sum(counts.values())
-        print(f"\n{house} ({total} responses):")
-        for subject, count in sorted(counts.items(), key=lambda x: -x[1]):
+        head = HEAD_OF_HOUSE[house]
+        print(f"\n{house} ({total} responses, head of house: {head}):")
+        for candidate, count in sorted(counts.items(), key=lambda x: -x[1]):
             bar = "█" * (count // 2)
-            print(f"  {subject:35s} {bar} {count}")
+            marker = " ← head of house" if candidate == head else ""
+            print(f"  {candidate:15s} {bar} {count}{marker}")
 
-    # Show a few examples
+    # Sample responses
     print(f"\nSample responses:")
-    for house, subject, text in data[:10]:
+    for house, candidate, text in data[:8]:
         print(f"  {text}")
